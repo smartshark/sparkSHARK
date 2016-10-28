@@ -28,7 +28,7 @@ import com.mongodb.MongoClientURI;
  * 
  * */
 
-public class DBUtils implements IDBUtils {
+public class MongoDBUtils implements IDBUtils {
 
 	@Override
 	public Dataset<Row> loadData(String collectionName) {
