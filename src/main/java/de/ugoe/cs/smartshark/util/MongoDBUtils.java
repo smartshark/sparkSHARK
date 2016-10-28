@@ -29,6 +29,12 @@ import com.mongodb.MongoClientURI;
  **/
 public class MongoDBUtils implements IDBUtils {
 
+    final SparkSession sparkSession;
+    
+    public MongoDBUtils(SparkSession sparkSession) {
+        this.sparkSession = sparkSession;
+    }
+    
     @Override
     public Dataset<Row> loadData(String collectionName) {
         return loadDataLogical(collectionName, null);
@@ -85,8 +91,7 @@ public class MongoDBUtils implements IDBUtils {
             options.put("database", Constants.DBNAME);
             options.put("collection", collectionName);
 
-            SparkSession spark = SparkSession.builder().master(Constants.SPARKURI).getOrCreate();
-            dataFrame = spark.read().schema(pluginSchema).format("com.stratio.datasource.mongodb")
+            dataFrame = sparkSession.read().schema(pluginSchema).format("com.stratio.datasource.mongodb")
                 .options(options).load();
 
             // dataFrame.show();
