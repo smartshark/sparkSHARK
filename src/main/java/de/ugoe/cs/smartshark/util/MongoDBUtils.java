@@ -232,6 +232,12 @@ public class MongoDBUtils implements IDBUtils {
                                                              DataTypes.IntegerType, true));
                         break;
                     }
+                    case "DoubleType": {
+                        structFields
+                            .add(DataTypes.createStructField((String) field.get("field_name"),
+                                                             DataTypes.DoubleType, true));
+                        break;
+                    }
                     case "BooleanType": {
                         structFields
                             .add(DataTypes.createStructField((String) field.get("field_name"),
@@ -268,6 +274,12 @@ public class MongoDBUtils implements IDBUtils {
                                 structFields.add(DataTypes
                                     .createStructField((String) field.get("field_name"), DataTypes
                                         .createArrayType(DataTypes.IntegerType, true), true));
+                                break;
+                            }
+                            case "DoubleType": {
+                                structFields.add(DataTypes
+                                    .createStructField((String) field.get("field_name"), DataTypes
+                                        .createArrayType(DataTypes.DoubleType, true), true));
                                 break;
                             }
                             case "BooleanType": {
