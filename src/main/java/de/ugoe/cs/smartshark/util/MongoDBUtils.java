@@ -148,7 +148,7 @@ public class MongoDBUtils implements IDBUtils {
     }
 
     @Override
-    public Dataset<Row> loadDataLogical(String collectionName, List<String> types) {
+    public Dataset<Row> loadDataLogical(String collectionName, List<List<String>> typeClauses) {
 
         Dataset<Row> dataFrame = null;
 
@@ -160,9 +160,6 @@ public class MongoDBUtils implements IDBUtils {
         StructType pluginSchema;
         BasicDBObject query = new BasicDBObject();
         query.put("collections.collection_name", collectionName);
-        if (types != null) {
-            query.put("collections.fields.logical_type", new BasicDBObject("$in", types));
-        }
 
         DBCursor pluginSchemaDocuments = pluginSchemaCollection.find(query);
         List<StructField> subSchema = new ArrayList<StructField>();
@@ -177,7 +174,7 @@ public class MongoDBUtils implements IDBUtils {
                     BasicDBList fieldsList = (BasicDBList) collection.get("fields");
                     BasicDBObject[] fields = fieldsList.toArray(new BasicDBObject[0]);
                     // List<Row> fields = collection.getList(1);
-                    subSchema.addAll(parseSchema(fields, types));
+                    subSchema.addAll(parseSchema(fields, typeClauses));
 
                 }
             }
@@ -204,16 +201,18 @@ public class MongoDBUtils implements IDBUtils {
         return dataFrame;
     }
 
-    private static ArrayList<StructField> parseSchema(BasicDBObject[] fields, List<String> types) {
+    private ArrayList<StructField> parseSchema(BasicDBObject[] fields,
+                                               List<List<String>> typeClauses)
+    {
 
         ArrayList<StructField> structFields = new ArrayList<StructField>();
 
         for (int i = 0; i < fields.length; i++) {
 
             BasicDBObject field = fields[i];
-            String logical_type = (String) field.get("logical_type");
+            Object logical_type = field.get("logical_type");
 
-            if ((types == null) || (types.contains(logical_type))) {
+            if (checkLogicalType(typeClauses, logical_type)) {
 
                 String type = (String) field.get("type");
 
@@ -254,7 +253,8 @@ public class MongoDBUtils implements IDBUtils {
 
                         BasicDBList subFieldsList = (BasicDBList) field.get("fields");
                         BasicDBObject[] subFields = subFieldsList.toArray(new BasicDBObject[0]);
-                        ArrayList<StructField> subStructFields = parseSchema(subFields, types);
+                        ArrayList<StructField> subStructFields =
+                            parseSchema(subFields, typeClauses);
                         structFields.add(DataTypes
                             .createStructField((String) field.get("field_name"),
                                                DataTypes.createStructType(subStructFields), true));
@@ -307,6 +307,48 @@ public class MongoDBUtils implements IDBUtils {
         }
 
         return structFields;
+    }
+
+    /**
+     * <p>
+     * Checks if the logical type matches the defined clauses. The clauses define a DNF.
+     * </p>
+     *
+     * @param typeClauses
+     *            List of list of strings for DNF. Outer list is the disjunction, inner list the
+     *            conjunction.
+     * @param logicalType
+     *            logical type object from the database. Can be both string or array type.
+     * @return true if a match, i.e., for any of the inner lists all types are contained in the
+     *         logical type object.
+     */
+    private boolean checkLogicalType(List<List<String>> typeClauses, Object logicalType) {
+        if (typeClauses == null || typeClauses.isEmpty()) {
+            return true; // nothing to check, take everything
+        }
+        System.out.println(logicalType.getClass().toString());
+        for (List<String> typeClause : typeClauses) {
+            if (logicalType instanceof String) {
+                if (typeClause.size() == 1) {
+                    if (logicalType.equals(typeClause.get(0))) {
+                        return true; // match to this clause
+                    }
+                }
+            }
+            if (logicalType instanceof BasicDBList) {
+                int numMatches = 0;
+                for (String type : typeClause) {
+                    if (((BasicDBList) logicalType).contains(type)) {
+                        // System.out.println(type);
+                        numMatches++;
+                    }
+                }
+                if (numMatches == typeClause.size()) {
+                    return true; // match to this clause
+                }
+            }
+        }
+        return false; // no match found, return false
     }
 
 }

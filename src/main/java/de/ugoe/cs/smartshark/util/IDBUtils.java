@@ -30,14 +30,17 @@ public interface IDBUtils {
 
     /**
      * <p>
-     * Loads all data that matches the logical types into a data frame.
+     * Loads all data that matches the logical types into a data frame. The logical types are
+     * matched using a DNF. This means, that there is a match, if for any of the inner lists, the
+     * logical type description contains all elements.
      * </p>
      * 
      * @param collectionName
      *            name of the collection in the DB.
-     * @param types
-     *            list of logical types.
+     * @param typeClauses
+     *            List of list of strings for DNF. Outer list is the disjunction, inner list the
+     *            conjunction.
      * @return the dataframe
      */
-    public Dataset<Row> loadDataLogical(String collectionName, List<String> types);
+    public Dataset<Row> loadDataLogical(String collectionName, List<List<String>> typeClauses);
 }

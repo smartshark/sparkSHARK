@@ -21,7 +21,7 @@ public class DummyDBUtils implements IDBUtils {
     }
 
     @Override
-    public Dataset<Row> loadDataLogical(String collectionName, List<String> types) {
+    public Dataset<Row> loadDataLogical(String collectionName, List<List<String>> types) {
         // TODO Auto-generated method stub
         return null;
     }
