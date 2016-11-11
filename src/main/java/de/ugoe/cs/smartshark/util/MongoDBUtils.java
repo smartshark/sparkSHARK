@@ -259,9 +259,13 @@ public class MongoDBUtils implements IDBUtils {
                         BasicDBObject[] subFields = subFieldsList.toArray(new BasicDBObject[0]);
                         ArrayList<StructField> subStructFields =
                             parseSchema(subFields, typeClauses);
-                        structFields.add(DataTypes
-                            .createStructField((String) field.get("field_name"),
-                                               DataTypes.createStructType(subStructFields), true));
+                        if (subStructFields.size() > 0) {
+                            // add only if there are any subfields
+                            // empty is possible due to logical filtering
+                            structFields.add(DataTypes
+                                .createStructField((String) field.get("field_name"),
+                                                   DataTypes.createStructType(subStructFields), true));
+                        }
                         break;
                     }
                     case "ArrayType": {
@@ -341,7 +345,9 @@ public class MongoDBUtils implements IDBUtils {
         if (typeClauses == null || typeClauses.isEmpty()) {
             return true; // nothing to check, take everything
         }
-        System.out.println(logicalType.getClass().toString());
+        if ("nested".equals(logicalType) || "Nested".equals(logicalType)) {
+            return true; // nothing to check for nested types
+        }
         for (List<String> typeClause : typeClauses) {
             if (logicalType instanceof String) {
                 if (typeClause.size() == 1) {
