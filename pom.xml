@@ -16,10 +16,10 @@
 
   <dependencies>
  	<dependency>
-    	<groupId>com.stratio.datasource</groupId>
-		<artifactId>spark-mongodb_2.11</artifactId>
-		<version>0.12.0</version>
-	</dependency>
+      <groupId>org.mongodb.spark</groupId>
+      <artifactId>mongo-spark-connector_2.11</artifactId>
+      <version>2.0.0</version>
+    </dependency>
     	
     <dependency>
 		<groupId>org.apache.spark</groupId>

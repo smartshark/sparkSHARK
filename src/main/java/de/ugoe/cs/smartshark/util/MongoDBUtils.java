@@ -1,7 +1,6 @@
 
 package de.ugoe.cs.smartshark.util;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,6 +9,7 @@ import java.util.Map;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -23,6 +23,7 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
+import com.mongodb.MongoURI;
 import com.mongodb.ServerAddress;
 
 /**
@@ -122,12 +123,7 @@ public class MongoDBUtils implements IDBUtils {
     public MongoClient getMongoClient() {
         // setup server address
         ServerAddress serverAddress;
-        try {
-            serverAddress = new ServerAddress(host, port);
-        }
-        catch (UnknownHostException e) {
-            throw new RuntimeException("invalid MongoDB server address", e);
-        }
+        serverAddress = new ServerAddress(host, port);
 
         // create client
         MongoClient mongoClient;
@@ -188,13 +184,12 @@ public class MongoDBUtils implements IDBUtils {
         // pluginSchema.printTreeString();
 
         Map<String, String> options = new HashMap<String, String>();
-        options.put("host", host + ":" + port);
-        options.put("database", dbname);
-        options.put("collection", collectionName);
+        options.put("spark.mongodb.input.uri",
+                    "mongodb://" + host + "/" + dbname + "." + collectionName);
         options.put("credentials", username + "," + authdb + "," + String.valueOf(password));
 
-        dataFrame = sparkSession.read().schema(pluginSchema)
-            .format("com.stratio.datasource.mongodb").options(options).load();
+        dataFrame = sparkSession.read().schema(pluginSchema).format("com.mongodb.spark.sql")
+            .options(options).load();
 
         // dataFrame.show();
 
@@ -219,6 +214,15 @@ public class MongoDBUtils implements IDBUtils {
                 //// more types can be added here
                 switch (type)
                 {
+                    case "ObjectIdType": {
+                        ArrayList<StructField> subStructFields = new ArrayList<StructField>();
+                        subStructFields
+                            .add(DataTypes.createStructField("oid", DataTypes.StringType, true));
+                        structFields.add(DataTypes
+                            .createStructField((String) field.get("field_name"),
+                                               DataTypes.createStructType(subStructFields), true));
+                        break;
+                    }
                     case "StringType": {
                         structFields
                             .add(DataTypes.createStructField((String) field.get("field_name"),
@@ -264,6 +268,17 @@ public class MongoDBUtils implements IDBUtils {
                         String sub_type = (String) field.get("sub_type");
                         switch (sub_type)
                         {
+                            case "ObjectIdType": {
+                                ArrayList<StructField> subStructFields =
+                                    new ArrayList<StructField>();
+                                subStructFields.add(DataTypes
+                                    .createStructField("oid", DataTypes.StringType, true));
+                                structFields.add(DataTypes
+                                    .createStructField((String) field.get("field_name"),
+                                                       DataTypes.createStructType(subStructFields),
+                                                       true));
+                                break;
+                            }
                             case "StringType": {
                                 structFields.add(DataTypes
                                     .createStructField((String) field.get("field_name"), DataTypes
@@ -349,6 +364,30 @@ public class MongoDBUtils implements IDBUtils {
             }
         }
         return false; // no match found, return false
+    }
+
+    /**
+     * <p>
+     * Writes the dataFrame to MongoDb.
+     * </p>
+     *
+     * @param dataset
+     *            DataFrame to be stored in MongoDb
+     * @param collectionName
+     *            collection where the dataFrame is stored
+     * @return void
+     * 
+     */
+
+    public void writeData(Dataset<Row> dataset, String collectionName) {
+
+        Map<String, String> options = new HashMap<String, String>();
+        options.put("spark.mongodb.output.uri",
+                    "mongodb://" + host + "/" + dbname + "." + collectionName);
+        options.put("credentials", username + "," + authdb + "," + String.valueOf(password));
+        dataset.write().format("com.mongodb.spark.sql").options(options).mode(SaveMode.Append)
+            .save();
+
     }
 
 }
