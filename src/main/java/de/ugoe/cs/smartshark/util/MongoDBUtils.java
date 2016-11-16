@@ -25,6 +25,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoURI;
 import com.mongodb.ServerAddress;
+import com.mongodb.spark.MongoConnector;
+import com.mongodb.spark.MongoSpark;
 
 /**
  * Database utilities for MongoDB usage.
@@ -181,17 +183,21 @@ public class MongoDBUtils implements IDBUtils {
 
         pluginSchema =
             DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
-        // pluginSchema.printTreeString();
 
         Map<String, String> options = new HashMap<String, String>();
-        options.put("spark.mongodb.input.uri",
-                    "mongodb://" + host + "/" + dbname + "." + collectionName);
-        options.put("credentials", username + "," + authdb + "," + String.valueOf(password));
+        if (useCredentials) {
+            options.put("spark.mongodb.input.uri",
+                        "mongodb://" + username + ":" + String.valueOf(password) + "@" + host +
+                            ":" + port + "/" + dbname + "." + collectionName + "?authSource=" +
+                            authdb);
+        }
+        else {
+            options.put("spark.mongodb.input.uri",
+                        "mongodb://" + host + "/" + dbname + "." + collectionName);
+        }
 
         dataFrame = sparkSession.read().schema(pluginSchema).format("com.mongodb.spark.sql")
             .options(options).load();
-
-        // dataFrame.show();
 
         return dataFrame;
     }
@@ -262,9 +268,11 @@ public class MongoDBUtils implements IDBUtils {
                         if (subStructFields.size() > 0) {
                             // add only if there are any subfields
                             // empty is possible due to logical filtering
-                            structFields.add(DataTypes
-                                .createStructField((String) field.get("field_name"),
-                                                   DataTypes.createStructType(subStructFields), true));
+                            structFields
+                                .add(DataTypes.createStructField((String) field.get("field_name"),
+                                                                 DataTypes
+                                                                     .createStructType(subStructFields),
+                                                                 true));
                         }
                         break;
                     }
