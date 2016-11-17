@@ -14,19 +14,16 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.bson.Document;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
-import com.mongodb.MongoURI;
 import com.mongodb.ServerAddress;
-import com.mongodb.spark.MongoConnector;
-import com.mongodb.spark.MongoSpark;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 /**
  * Database utilities for MongoDB usage.
@@ -152,25 +149,31 @@ public class MongoDBUtils implements IDBUtils {
 
         MongoClient mongoClient = getMongoClient();
 
-        DB metricDB = mongoClient.getDB(dbname);
-        DBCollection pluginSchemaCollection = metricDB.getCollection(pluginSchemaCollectionName);
+        // DB metricDB = mongoClient.getDB(dbname);
+        MongoDatabase metricDB = mongoClient.getDatabase(dbname);
+        MongoCollection<Document> pluginSchemaCollection =
+            metricDB.getCollection(pluginSchemaCollectionName);
 
         StructType pluginSchema;
         BasicDBObject query = new BasicDBObject();
         query.put("collections.collection_name", collectionName);
 
-        DBCursor pluginSchemaDocuments = pluginSchemaCollection.find(query);
+        FindIterable<Document> pluginSchemaDocuments = pluginSchemaCollection.find(query);
         List<StructField> subSchema = new ArrayList<StructField>();
 
-        for (DBObject pluginSchemaDocument : pluginSchemaDocuments) {
-            BasicDBList collectionsList = (BasicDBList) pluginSchemaDocument.get("collections");
-            BasicDBObject[] collections = collectionsList.toArray(new BasicDBObject[0]);
-            for (BasicDBObject collection : collections) {
+        for (Document pluginSchemaDocument : pluginSchemaDocuments) {
+            @SuppressWarnings("unchecked")
+            ArrayList<Document> collectionsList =
+                (ArrayList<Document>) pluginSchemaDocument.get("collections");
+            // BasicDBList collectionsList = (BasicDBList) pluginSchemaDocument.get("collections");
+            Document[] collections = collectionsList.toArray(new Document[0]);
+            for (Document collection : collections) {
 
                 String collection_name = (String) collection.getString("collection_name");
                 if (collection_name.equalsIgnoreCase(collectionName)) {
-                    BasicDBList fieldsList = (BasicDBList) collection.get("fields");
-                    BasicDBObject[] fields = fieldsList.toArray(new BasicDBObject[0]);
+                    @SuppressWarnings("unchecked")
+                    ArrayList<Document> fieldsList = (ArrayList<Document>) collection.get("fields");
+                    Document[] fields = fieldsList.toArray(new Document[0]);
                     // List<Row> fields = collection.getList(1);
                     subSchema.addAll(parseSchema(fields, typeClauses));
 
@@ -202,15 +205,13 @@ public class MongoDBUtils implements IDBUtils {
         return dataFrame;
     }
 
-    private ArrayList<StructField> parseSchema(BasicDBObject[] fields,
-                                               List<List<String>> typeClauses)
-    {
+    private ArrayList<StructField> parseSchema(Document[] fields, List<List<String>> typeClauses) {
 
         ArrayList<StructField> structFields = new ArrayList<StructField>();
 
         for (int i = 0; i < fields.length; i++) {
 
-            BasicDBObject field = fields[i];
+            Document field = fields[i];
             Object logical_type = field.get("logical_type");
 
             if (checkLogicalType(typeClauses, logical_type)) {
@@ -268,8 +269,10 @@ public class MongoDBUtils implements IDBUtils {
                     }
                     case "StructType": {
 
-                        BasicDBList subFieldsList = (BasicDBList) field.get("fields");
-                        BasicDBObject[] subFields = subFieldsList.toArray(new BasicDBObject[0]);
+                        @SuppressWarnings("unchecked")
+                        ArrayList<Document> subFieldsList =
+                            (ArrayList<Document>) field.get("fields");
+                        Document[] subFields = subFieldsList.toArray(new Document[0]);
                         ArrayList<StructField> subStructFields =
                             parseSchema(subFields, typeClauses);
                         if (subStructFields.size() > 0) {
