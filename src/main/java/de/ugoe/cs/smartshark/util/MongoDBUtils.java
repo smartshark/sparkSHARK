@@ -16,7 +16,6 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.bson.Document;
 
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
@@ -366,6 +365,7 @@ public class MongoDBUtils implements IDBUtils {
      * @return true if a match, i.e., for any of the inner lists all types are contained in the
      *         logical type object.
      */
+    @SuppressWarnings("unchecked")
     private boolean checkLogicalType(List<List<String>> typeClauses, Object logicalType) {
         if (typeClauses == null || typeClauses.isEmpty()) {
             return true; // nothing to check, take everything
@@ -381,10 +381,10 @@ public class MongoDBUtils implements IDBUtils {
                     }
                 }
             }
-            if (logicalType instanceof BasicDBList) {
+            if (logicalType instanceof ArrayList) {
                 int numMatches = 0;
                 for (String type : typeClause) {
-                    if (((BasicDBList) logicalType).contains(type)) {
+                    if (((ArrayList<Object>) logicalType).contains(type)) {
                         // System.out.println(type);
                         numMatches++;
                     }
