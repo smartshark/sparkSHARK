@@ -257,6 +257,13 @@ public class MongoDBUtils implements IDBUtils {
                         structFields
                             .add(DataTypes.createStructField((String) field.get("field_name"),
                                                              DataTypes.DateType, true));
+
+                        break;
+                    }
+                    case "TimestampType": {
+                        structFields
+                            .add(DataTypes.createStructField((String) field.get("field_name"),
+                                                             DataTypes.TimestampType, true));
                         break;
                     }
                     case "StructType": {
@@ -287,7 +294,8 @@ public class MongoDBUtils implements IDBUtils {
                                     .createStructField("oid", DataTypes.StringType, true));
                                 structFields.add(DataTypes
                                     .createStructField((String) field.get("field_name"),
-                                                       DataTypes.createStructType(subStructFields),
+                                                       DataTypes.createArrayType(DataTypes
+                                                           .createStructType(subStructFields)),
                                                        true));
                                 break;
                             }
@@ -319,6 +327,12 @@ public class MongoDBUtils implements IDBUtils {
                                 structFields.add(DataTypes
                                     .createStructField((String) field.get("field_name"), DataTypes
                                         .createArrayType(DataTypes.DateType, true), true));
+                                break;
+                            }
+                            case "TimestampType": {
+                                structFields.add(DataTypes
+                                    .createStructField((String) field.get("field_name"), DataTypes
+                                        .createArrayType(DataTypes.TimestampType, true), true));
                                 break;
                             }
 
