@@ -26,4 +26,10 @@ public class DummyDBUtils implements IDBUtils {
         return null;
     }
 
+    @Override
+    public void writeData(Dataset<Row> dataset, String location) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

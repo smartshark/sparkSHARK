@@ -43,4 +43,16 @@ public interface IDBUtils {
      * @return the dataframe
      */
     public Dataset<Row> loadDataLogical(String collectionName, List<List<String>> typeClauses);
+    
+    /**
+     * <p>
+     * Writes the dataframe to the specified location in the database.
+     * </p>
+     *
+     * @param dataset
+     *            DataFrame to be stored in MongoDb
+     * @param collectionName
+     *            collection where the dataFrame is stored
+     */
+    public void writeData(Dataset<Row> dataset, String location);
 }

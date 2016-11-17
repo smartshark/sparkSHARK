@@ -418,9 +418,8 @@ public class MongoDBUtils implements IDBUtils {
      *            DataFrame to be stored in MongoDb
      * @param collectionName
      *            collection where the dataFrame is stored
-     * @return void
-     * 
      */
+    @Override
     public void writeData(Dataset<Row> dataset, String collectionName) {
         Map<String, String> options = new HashMap<>();
         options.put("spark.mongodb.output.uri", getConnectionUri(collectionName));
