@@ -186,17 +186,8 @@ public class MongoDBUtils implements IDBUtils {
         pluginSchema =
             DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
 
-        Map<String, String> options = new HashMap<String, String>();
-        if (useCredentials) {
-            options.put("spark.mongodb.input.uri",
-                        "mongodb://" + username + ":" + String.valueOf(password) + "@" + host +
-                            ":" + port + "/" + dbname + "." + collectionName + "?authSource=" +
-                            authdb);
-        }
-        else {
-            options.put("spark.mongodb.input.uri",
-                        "mongodb://" + host + "/" + dbname + "." + collectionName);
-        }
+        Map<String, String> options = new HashMap<>();
+        options.put("spark.mongodb.input.uri", getConnectionUri(collectionName));
 
         dataFrame = sparkSession.read().schema(pluginSchema).format("com.mongodb.spark.sql")
             .options(options).load();
@@ -399,6 +390,27 @@ public class MongoDBUtils implements IDBUtils {
 
     /**
      * <p>
+     * Creates the DB connection URI.
+     * </p>
+     *
+     * @param collectionName
+     *            collection name for which the URI is created.
+     * @return URI for DB connection
+     */
+    private String getConnectionUri(String collectionName) {
+        String uri;
+        if (useCredentials) {
+            uri = "mongodb://" + username + ":" + String.valueOf(password) + "@" + host + ":" +
+                port + "/" + dbname + "." + collectionName + "?authSource=" + authdb;
+        }
+        else {
+            uri = "mongodb://" + host + "/" + dbname + "." + collectionName;
+        }
+        return uri;
+    }
+
+    /**
+     * <p>
      * Writes the dataFrame to MongoDb.
      * </p>
      *
@@ -409,16 +421,11 @@ public class MongoDBUtils implements IDBUtils {
      * @return void
      * 
      */
-
     public void writeData(Dataset<Row> dataset, String collectionName) {
-
-        Map<String, String> options = new HashMap<String, String>();
-        options.put("spark.mongodb.output.uri",
-                    "mongodb://" + host + "/" + dbname + "." + collectionName);
-        options.put("credentials", username + "," + authdb + "," + String.valueOf(password));
+        Map<String, String> options = new HashMap<>();
+        options.put("spark.mongodb.output.uri", getConnectionUri(collectionName));
         dataset.write().format("com.mongodb.spark.sql").options(options).mode(SaveMode.Append)
             .save();
-
     }
 
 }
