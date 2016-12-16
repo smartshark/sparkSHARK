@@ -31,15 +31,16 @@ To pass one of these parameters to the Spark configuration via the JVM, you need
 
 Currently, there are only MongoDBUtils, however, in case a different backend is used, it could be easily replaced without touching analysis jobs using the DBUtils. 
 
-To initialize the DBUtils, you can use the following code:
+The following code samples show how to use the DB utils:
 ```Java
 // Java
 IDBUtils dbUtils = DBUtilFactory.getDBUtils(sparkSession);
+Dataset<Row> commits = dbUtils.loadData("commits");
 ```
 
 ```scala
 // scala
-var dbUtils = DBUtilFactory.getDBUtils(sparkSession);
+TODO
 ```
 
 ```python
@@ -47,4 +48,32 @@ var dbUtils = DBUtilFactory.getDBUtils(sparkSession);
 TODO
 ```
 
-For using the DBUtils with R, we provide support with the [rSHARK](https://github.com/smartshark/rSHARK). 
+The DBUtils also support more complex loading commands that allow a logical selection of fields from a collection. To this aim, 
+a Disjunctive Normal Form (DNF) is defined using lists. The logical types can be found in the description of the [database schema](link missing!).
+```Java
+// Java
+/* Load all fields from entity_state that are:
+ * - a reference
+ * - an abstraction levels, or
+ * - a product metric for java classes.
+ */
+Dataset<Row> entityState = dbUtils.loadDataLogical("entity_state",
+    Arrays.asList(Arrays.asList("RID"), 
+    Arrays.asList("AbstractionLevel"),
+    Arrays.asList("ProductMetric", "JavaClass")))
+```
+
+```scala
+// scala
+TODO
+```
+
+```python
+# python
+TODO
+```
+
+The DBUtils can also be used with R using the [rSHARK](https://github.com/smartshark/rSHARK). 
+
+
+
