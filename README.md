@@ -49,7 +49,7 @@ TODO
 ```
 
 The DBUtils also support more complex loading commands that allow a logical selection of fields from a collection. To this aim, 
-a Disjunctive Normal Form (DNF) is defined using lists. The logical types can be found in the description of the [database schema](link missing!).
+a Disjunctive Normal Form (DNF) is defined using lists. The concrete logical types can be found in the description of the database schema of the SmartSHARK instance you are using.
 ```Java
 // Java
 /* Load all fields from entity_state that are:
@@ -75,5 +75,10 @@ TODO
 
 The DBUtils can also be used with R using the [rSHARK](https://github.com/smartshark/rSHARK). 
 
+AnalysisUtils
+-------------
+Utility functions for tasks that are recuring for different analysis. For now, please consult the Javadoc for further information. 
 
-
+DataFrameUtils
+--------------
+Utility functions for manipulating dataframes. For now, please consult the Javadoc for further information. 
