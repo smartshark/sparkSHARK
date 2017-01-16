@@ -153,12 +153,11 @@ public class MongoDBUtils implements IDBUtils {
         MongoCollection<Document> pluginSchemaCollection =
             metricDB.getCollection(pluginSchemaCollectionName);
 
-        StructType pluginSchema;
+        StructType pluginSchema = null;
         BasicDBObject query = new BasicDBObject();
         query.put("collections.collection_name", collectionName);
 
         FindIterable<Document> pluginSchemaDocuments = pluginSchemaCollection.find(query);
-        List<StructField> subSchema = new ArrayList<StructField>();
 
         for (Document pluginSchemaDocument : pluginSchemaDocuments) {
             @SuppressWarnings("unchecked")
@@ -174,17 +173,21 @@ public class MongoDBUtils implements IDBUtils {
                     ArrayList<Document> fieldsList = (ArrayList<Document>) collection.get("fields");
                     Document[] fields = fieldsList.toArray(new Document[0]);
                     // List<Row> fields = collection.getList(1);
-                    subSchema.addAll(parseSchema(fields, typeClauses));
-
+                    
+                    List<StructField> subSchema = parseSchema(fields, typeClauses);
+                    if( pluginSchema==null ) {
+                        pluginSchema = DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
+                    } else {
+                        StructType toMerge = DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
+                        pluginSchema = pluginSchema.merge(toMerge);
+                    }
+                    pluginSchema.printTreeString();
                 }
             }
 
         }
 
         mongoClient.close();
-
-        pluginSchema =
-            DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
 
         Map<String, String> options = new HashMap<>();
         options.put("spark.mongodb.input.uri", getConnectionUri(collectionName));
@@ -195,7 +198,7 @@ public class MongoDBUtils implements IDBUtils {
         return dataFrame;
     }
 
-    private ArrayList<StructField> parseSchema(Document[] fields, List<List<String>> typeClauses) {
+    private List<StructField> parseSchema(Document[] fields, List<List<String>> typeClauses) {
 
         ArrayList<StructField> structFields = new ArrayList<StructField>();
 
@@ -263,7 +266,7 @@ public class MongoDBUtils implements IDBUtils {
                         ArrayList<Document> subFieldsList =
                             (ArrayList<Document>) field.get("fields");
                         Document[] subFields = subFieldsList.toArray(new Document[0]);
-                        ArrayList<StructField> subStructFields =
+                        List<StructField> subStructFields =
                             parseSchema(subFields, typeClauses);
                         if (subStructFields.size() > 0) {
                             // add only if there are any subfields
