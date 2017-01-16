@@ -45,7 +45,33 @@ TODO
 
 ```python
 # python
-TODO
+import pyspark
+from py4j.java_gateway import java_import
+from pyspark.mllib.common import _java2py
+
+# create a SparkContext and SparkConf for the MongoDB configuration used by the DBUtils
+conf = pyspark.SparkConf()
+conf.set('spark.executorEnv.mongo.uri', '127.0.0.1')
+conf.set('spark.executorEnv.mongo.username', 'user')
+conf.set('spark.executorEnv.mongo.password', 'pass')
+conf.set('spark.executorEnv.mongo.useauth', 'true')
+conf.set('spark.executorEnv.mongo.dbname', 'smartshark')
+sc = pyspark.SparkContext(master='local[*]', appName='Test', conf=conf)
+
+# import the DBUtilFactory and SparkSession
+java_import(sc._gateway.jvm, 'de.ugoe.cs.smartshark.util.DBUtilFactory')
+java_import(sc._gateway.jvm, 'org.apache.spark.sql.SparkSession')
+
+# create a Java SparkSession
+ss = sc._gateway.jvm.SparkSession.builder().appName('Test').getOrCreate()
+
+# pass the Java SparkSession to the DBUtilFactory to get the DBUtils Object
+dbUtils = sc._gateway.jvm.DBUtilFactory.getDBUtils(ss)
+
+# load data and convert to python, this yields a pyspark DataFrame
+cdf = _java2py(sc, dbUtils.loadData('commit'))
+
+cdf.show()
 ```
 
 The DBUtils also support more complex loading commands that allow a logical selection of fields from a collection. To this aim, 
@@ -70,7 +96,9 @@ TODO
 
 ```python
 # python
-TODO
+
+# please see the full python example above for the necessary imports and session setup
+dfc = _java2py(sc, t.loadDataLogical('code_entity_state', [['AbstractionLevel'], ['ProductMetric', 'Java']]))
 ```
 
 The DBUtils can also be used with R using the [rSHARK](https://github.com/smartshark/rSHARK). 
