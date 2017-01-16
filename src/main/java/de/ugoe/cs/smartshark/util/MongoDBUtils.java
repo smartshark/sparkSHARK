@@ -163,7 +163,6 @@ public class MongoDBUtils implements IDBUtils {
             @SuppressWarnings("unchecked")
             ArrayList<Document> collectionsList =
                 (ArrayList<Document>) pluginSchemaDocument.get("collections");
-            // BasicDBList collectionsList = (BasicDBList) pluginSchemaDocument.get("collections");
             Document[] collections = collectionsList.toArray(new Document[0]);
             for (Document collection : collections) {
 
@@ -172,13 +171,15 @@ public class MongoDBUtils implements IDBUtils {
                     @SuppressWarnings("unchecked")
                     ArrayList<Document> fieldsList = (ArrayList<Document>) collection.get("fields");
                     Document[] fields = fieldsList.toArray(new Document[0]);
-                    // List<Row> fields = collection.getList(1);
-                    
+
                     List<StructField> subSchema = parseSchema(fields, typeClauses);
-                    if( pluginSchema==null ) {
-                        pluginSchema = DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
-                    } else {
-                        StructType toMerge = DataTypes.createStructType(subSchema.toArray(new StructField[subSchema.size()]));
+                    if (pluginSchema == null) {
+                        pluginSchema = DataTypes
+                            .createStructType(subSchema.toArray(new StructField[subSchema.size()]));
+                    }
+                    else {
+                        StructType toMerge = DataTypes
+                            .createStructType(subSchema.toArray(new StructField[subSchema.size()]));
                         pluginSchema = pluginSchema.merge(toMerge);
                     }
                     pluginSchema.printTreeString();
@@ -266,8 +267,7 @@ public class MongoDBUtils implements IDBUtils {
                         ArrayList<Document> subFieldsList =
                             (ArrayList<Document>) field.get("fields");
                         Document[] subFields = subFieldsList.toArray(new Document[0]);
-                        List<StructField> subStructFields =
-                            parseSchema(subFields, typeClauses);
+                        List<StructField> subStructFields = parseSchema(subFields, typeClauses);
                         if (subStructFields.size() > 0) {
                             // add only if there are any subfields
                             // empty is possible due to logical filtering
@@ -379,7 +379,6 @@ public class MongoDBUtils implements IDBUtils {
                 int numMatches = 0;
                 for (String type : typeClause) {
                     if (((ArrayList<Object>) logicalType).contains(type)) {
-                        // System.out.println(type);
                         numMatches++;
                     }
                 }
