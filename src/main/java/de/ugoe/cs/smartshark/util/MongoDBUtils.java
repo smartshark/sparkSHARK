@@ -182,7 +182,6 @@ public class MongoDBUtils implements IDBUtils {
                             .createStructType(subSchema.toArray(new StructField[subSchema.size()]));
                         pluginSchema = pluginSchema.merge(toMerge);
                     }
-                    pluginSchema.printTreeString();
                 }
             }
 
